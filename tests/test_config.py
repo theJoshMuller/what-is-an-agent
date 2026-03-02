@@ -11,7 +11,7 @@ def test_load_creates_default_config(tmp_path, monkeypatch):
     importlib.reload(config)
     cfg = config.load()
     assert cfg["provider"] == "ollama"
-    assert cfg["ollama"]["model"] == "gemma3:27b"
+    assert cfg["ollama"]["model"] == "ministral-3:14b-instruct-2512-q8_0"
     assert (tmp_path / "config.json").exists()
 
 
@@ -20,7 +20,7 @@ def test_get_nested_key(tmp_path, monkeypatch):
     from app import config
     importlib.reload(config)
     config.load()
-    assert config.get("ollama.model") == "gemma3:27b"
+    assert config.get("ollama.model") == "ministral-3:14b-instruct-2512-q8_0"
     assert config.get("provider") == "ollama"
 
 

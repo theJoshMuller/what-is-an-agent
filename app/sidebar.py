@@ -62,23 +62,24 @@ class Sidebar(Gtk.Box):
             row.connect("notify::active", self._on_switch_changed, config_key)
             tools_group.add(row)
 
-        # ── Model ──────────────────────────────────────────────────
-        model_group = Adw.PreferencesGroup()
-        model_group.set_title("Model")
-        model_group.set_margin_start(12)
-        model_group.set_margin_end(12)
-        model_group.set_margin_top(16)
-        content.append(model_group)
+        # ── Provider (above model name) ────────────────────────────────
+        provider_outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        provider_outer.set_margin_start(12)
+        provider_outer.set_margin_end(12)
+        provider_outer.set_margin_top(16)
 
-        # Provider toggle row
-        provider_row = Adw.ActionRow()
-        provider_row.set_title("Provider")
+        provider_label = Gtk.Label(label="Provider")
+        provider_label.set_xalign(0)
+        provider_label.add_css_class("heading")
+        provider_outer.append(provider_label)
 
-        provider_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-        provider_box.set_valign(Gtk.Align.CENTER)
+        btn_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        btn_row.add_css_class("linked")
 
         self._ollama_btn = Gtk.ToggleButton(label="Ollama")
+        self._ollama_btn.set_hexpand(True)
         self._openrouter_btn = Gtk.ToggleButton(label="OpenRouter")
+        self._openrouter_btn.set_hexpand(True)
         self._openrouter_btn.set_group(self._ollama_btn)
 
         current_provider = config.get("provider", "ollama")
@@ -88,14 +89,22 @@ class Sidebar(Gtk.Box):
         self._ollama_btn.connect("toggled", self._on_provider_toggled, "ollama")
         self._openrouter_btn.connect("toggled", self._on_provider_toggled, "openrouter")
 
-        provider_box.append(self._ollama_btn)
-        provider_box.append(self._openrouter_btn)
-        provider_row.add_suffix(provider_box)
-        model_group.add(provider_row)
+        btn_row.append(self._ollama_btn)
+        btn_row.append(self._openrouter_btn)
+        provider_outer.append(btn_row)
+        content.append(provider_outer)
+
+        # ── Model name ──────────────────────────────────────────────────
+        model_group = Adw.PreferencesGroup()
+        model_group.set_title("Model")
+        model_group.set_margin_start(12)
+        model_group.set_margin_end(12)
+        model_group.set_margin_top(8)
+        content.append(model_group)
 
         # Current model name display
         self._model_row = Adw.ActionRow()
-        self._model_row.set_title("Model")
+        self._model_row.set_title("Active")
         self._update_model_subtitle()
         model_group.add(self._model_row)
 
@@ -159,7 +168,7 @@ class Sidebar(Gtk.Box):
             return
         provider = config.get("provider", "ollama")
         model = (
-            config.get("ollama.model", "gemma3:27b")
+            config.get("ollama.model", "ministral-3:14b-instruct-2512-q8_0")
             if provider == "ollama"
             else config.get("openrouter.model", "qwen/qwen3-235b-a22b-2507")
         )

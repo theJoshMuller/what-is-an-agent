@@ -3,7 +3,7 @@
   "ollama": {
     "host": "localhost",
     "port": 11434,
-    "model": "gemma3:27b"
+    "model": "ministral-3:14b-instruct-2512-q8_0"
   },
   "openrouter": {
     "model": "qwen/qwen3-235b-a22b-2507",

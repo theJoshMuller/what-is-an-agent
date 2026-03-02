@@ -35,7 +35,7 @@ def _parse_chunk(raw: str) -> StreamChunk:
 def stream(messages: list, tools: list) -> Generator[StreamChunk, None, None]:
     host = config.get("ollama.host", "localhost")
     port = config.get("ollama.port", 11434)
-    model = config.get("ollama.model", "gemma3:27b")
+    model = config.get("ollama.model", "ministral-3:14b-instruct-2512-q8_0")
     url = f"http://{host}:{port}/api/chat"
 
     payload = {
@@ -58,6 +58,7 @@ def stream(messages: list, tools: list) -> Generator[StreamChunk, None, None]:
     except requests.exceptions.ConnectionError:
         yield StreamChunk(error=f"Cannot connect to Ollama at {host}:{port}. Is Ollama running?")
     except requests.exceptions.HTTPError as e:
-        yield StreamChunk(error=f"Ollama API error: {e.response.status_code}")
+        body = e.response.text[:300] if e.response else ""
+        yield StreamChunk(error=f"Ollama API error: {e.response.status_code} — {body}")
     except Exception as e:
         yield StreamChunk(error=str(e))
