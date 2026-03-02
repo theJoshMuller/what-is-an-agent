@@ -1,0 +1,19 @@
+/* app/style.css — What is an Agent? demo */
+
+/* ── User message bubble ────────────────────────────────────────── */
+.user-bubble {
+  background-color: @accent_bg_color;
+  color: @accent_fg_color;
+  border-radius: 18px 18px 4px 18px;
+}
+
+/* ── Assistant message bubble ───────────────────────────────────── */
+.assistant-bubble {
+  background-color: @card_bg_color;
+  border-radius: 18px 18px 18px 4px;
+}
+
+/* ── Input bar separator ─────────────────────────────────────────── */
+.input-bar {
+  border-top: 1px solid @borders;
+}
