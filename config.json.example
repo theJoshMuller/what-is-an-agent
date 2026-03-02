@@ -1,0 +1,22 @@
+{
+  "provider": "ollama",
+  "ollama": {
+    "host": "localhost",
+    "port": 11434,
+    "model": "gemma3:27b"
+  },
+  "openrouter": {
+    "model": "qwen/qwen3-235b-a22b-2507",
+    "api_key": ""
+  },
+  "tools": {
+    "read_file": true,
+    "write_txt_file": true,
+    "tts_generate_audio": false,
+    "default_read_filename": "note.txt"
+  },
+  "tts": {
+    "host": "localhost",
+    "port": 8880
+  }
+}
