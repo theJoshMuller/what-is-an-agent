@@ -15,6 +15,7 @@ def _parse_chunk(raw: str) -> StreamChunk:
     done = data.get("done", False)
     msg = data.get("message", {})
     content = msg.get("content", "") or ""
+    thinking = msg.get("thinking", "") or ""
     raw_tool_calls = msg.get("tool_calls") or []
 
     tool_calls = []
@@ -30,13 +31,13 @@ def _parse_chunk(raw: str) -> StreamChunk:
                 args = {}
         tool_calls.append(ToolCall(id=tc_id, name=name, arguments=args))
 
-    return StreamChunk(text=content, tool_calls=tool_calls, done=done)
+    return StreamChunk(text=content, thinking=thinking, tool_calls=tool_calls, done=done)
 
 
 def stream(messages: list, tools: list) -> Generator[StreamChunk, None, None]:
     host = config.get("ollama.host", "localhost")
     port = config.get("ollama.port", 11434)
-    model = config.get("ollama.model", "mistral-small3.2:latest")
+    model = config.get("ollama.model", "gpt-oss:20b")
     url = f"http://{host}:{port}/api/chat"
 
     payload = {

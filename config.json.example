@@ -3,7 +3,7 @@
   "ollama": {
     "host": "localhost",
     "port": 11434,
-    "model": "mistral-small3.2:latest"
+    "model": "gpt-oss:20b"
   },
   "openrouter": {
     "model": "qwen/qwen3-235b-a22b-2507",

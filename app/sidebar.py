@@ -168,7 +168,7 @@ class Sidebar(Gtk.Box):
             return
         provider = config.get("provider", "ollama")
         model = (
-            config.get("ollama.model", "mistral-small3.2:latest")
+            config.get("ollama.model", "gpt-oss:20b")
             if provider == "ollama"
             else config.get("openrouter.model", "qwen/qwen3-235b-a22b-2507")
         )

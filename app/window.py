@@ -143,6 +143,22 @@ class AgentDemoWindow(Adw.ApplicationWindow):
         event.wait()
         return result[0]
 
+    def _create_thinking_bubble_sync(self):
+        """Create a ThinkingBubble on the main thread; safe to call from any thread."""
+        from app.chat_panel import ThinkingBubble
+        result: list = []
+        event = threading.Event()
+
+        def _create():
+            bubble = self._chat.start_thinking()
+            result.append(bubble)
+            event.set()
+            return False
+
+        GLib.idle_add(_create)
+        event.wait()
+        return result[0]
+
     # ── Agentic loop ──────────────────────────────────────────────
 
     def _agent_loop(self):
@@ -179,8 +195,9 @@ class AgentDemoWindow(Adw.ApplicationWindow):
             }
 
             while True:
-                # Bubble is created lazily — only when the LLM actually streams text
+                # Bubbles are created lazily — only when content actually arrives
                 bubble_id = -1
+                thinking_bubble = None
                 full_text = ""
                 pending_tool_calls = []
 
@@ -198,6 +215,10 @@ class AgentDemoWindow(Adw.ApplicationWindow):
                         GLib.idle_add(self._sidebar.set_status, "Error")
                         GLib.idle_add(self._set_input_sensitive, True)
                         return
+                    if chunk.thinking:
+                        if thinking_bubble is None:
+                            thinking_bubble = self._create_thinking_bubble_sync()
+                        GLib.idle_add(thinking_bubble.append_thinking, chunk.thinking)
                     if chunk.text:
                         if bubble_id == -1:
                             bubble_id = self._create_bubble_sync()
@@ -212,7 +233,7 @@ class AgentDemoWindow(Adw.ApplicationWindow):
                 if full_text or pending_tool_calls:
                     assistant_msg = {
                         "role": "assistant",
-                        "content": full_text if full_text else None,
+                        "content": full_text,
                     }
                     if pending_tool_calls:
                         assistant_msg["tool_calls"] = [

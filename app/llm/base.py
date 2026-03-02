@@ -15,6 +15,7 @@ class ToolCall:
 class StreamChunk:
     """Yielded by streaming LLM clients."""
     text: str = ""
+    thinking: str = ""
     tool_calls: list = field(default_factory=list)  # list[ToolCall]
     done: bool = False
     error: Optional[str] = None

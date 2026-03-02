@@ -93,6 +93,40 @@ class MessageBubble(Gtk.Box):
         self._render()
 
 
+class ThinkingBubble(Gtk.Box):
+    """Collapsible 'Thinking…' block shown while a thinking model reasons."""
+
+    def __init__(self):
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        self.set_margin_start(12)
+        self.set_margin_end(12)
+        self.set_margin_top(4)
+        self.set_margin_bottom(2)
+
+        self._text = ""
+
+        self._label = Gtk.Label()
+        self._label.set_wrap(True)
+        self._label.set_xalign(0)
+        self._label.set_selectable(True)
+        self._label.add_css_class("monospace")
+        self._label.add_css_class("caption")
+        self._label.add_css_class("dim-label")
+        self._label.set_margin_start(8)
+        self._label.set_margin_top(4)
+        self._label.set_margin_bottom(4)
+
+        self._expander = Gtk.Expander(label="Thinking…")
+        self._expander.set_child(self._label)
+        self._expander.set_margin_end(60)
+        self._expander.set_halign(Gtk.Align.START)
+        self.append(self._expander)
+
+    def append_thinking(self, token: str):
+        self._text += token
+        self._label.set_text(self._text)
+
+
 class ToolChip(Gtk.Box):
     """Inline indicator shown while a tool is being called."""
 
@@ -224,6 +258,13 @@ class ChatPanel(Gtk.Box):
         if bubble:
             bubble.append_text(text)
             self._scroll_to_bottom()
+
+    def start_thinking(self) -> "ThinkingBubble":
+        """Add a collapsible thinking block; return it for token appending."""
+        bubble = ThinkingBubble()
+        self._list.append(bubble)
+        self._scroll_to_bottom()
+        return bubble
 
     def add_tool_indicator(self, tool_name: str):
         chip = ToolChip(tool_name)

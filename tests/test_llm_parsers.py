@@ -82,9 +82,44 @@ class TestStreamChunk:
         assert chunk.tool_calls == []
         assert chunk.done is False
         assert chunk.error is None
+        assert chunk.thinking == ""
 
     def test_tool_call_dataclass(self):
         from app.llm.base import ToolCall
         tc = ToolCall(id="abc", name="read_file", arguments={"filename": "note.txt"})
         assert tc.name == "read_file"
         assert tc.arguments == {"filename": "note.txt"}
+
+
+class TestOllamaThinkingParser:
+    def test_thinking_token_parsed(self):
+        from app.llm.ollama import _parse_chunk
+        raw = json.dumps({
+            "message": {"role": "assistant", "content": "", "thinking": "I need to write"},
+            "done": False
+        })
+        chunk = _parse_chunk(raw)
+        assert chunk.thinking == "I need to write"
+        assert chunk.text == ""
+
+    def test_chunk_without_thinking_has_empty_string(self):
+        from app.llm.ollama import _parse_chunk
+        raw = json.dumps({"message": {"content": "Hi"}, "done": False})
+        chunk = _parse_chunk(raw)
+        assert chunk.thinking == ""
+
+    def test_thinking_and_tool_calls_in_final_chunk(self):
+        from app.llm.ollama import _parse_chunk
+        raw = json.dumps({
+            "message": {
+                "role": "assistant",
+                "content": "",
+                "thinking": "I should call the tool",
+                "tool_calls": [{"id": "call_1", "function": {"name": "write_txt_file", "arguments": {"filename": "f.txt", "content": "hi"}}}]
+            },
+            "done": True
+        })
+        chunk = _parse_chunk(raw)
+        assert chunk.thinking == "I should call the tool"
+        assert len(chunk.tool_calls) == 1
+        assert chunk.done is True
