@@ -22,7 +22,7 @@ def _chat(messages, tools=None):
     host = config.get("ollama.host", "localhost")
     port = config.get("ollama.port", 11434)
     model = config.get("ollama.model", "mistral-small3.2:latest")
-    payload = {"model": model, "messages": messages, "stream": False}
+    payload = {"model": model, "messages": messages, "stream": False, "think": False}
     if tools:
         payload["tools"] = tools
     resp = requests.post(f"http://{host}:{port}/api/chat", json=payload, timeout=60)
