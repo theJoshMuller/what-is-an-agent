@@ -7,7 +7,7 @@ SCHEMA = {
     "type": "function",
     "function": {
         "name": "write_txt_file",
-        "description": "Write text content to a file inside the ./files/ directory.",
+        "description": "Write text content to a file inside the ./files/ directory. Use this to create new files with your custom text.",
         "parameters": {
             "type": "object",
             "properties": {
