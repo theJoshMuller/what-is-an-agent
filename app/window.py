@@ -190,7 +190,8 @@ class AgentDemoWindow(Adw.ApplicationWindow):
                 "content": (
                     "You are a helpful assistant with access to tools. "
                     "When the user asks you to read files, write files, or generate speech, "
-                    "always use the appropriate tool — never say you cannot do something that a tool enables."
+                    "always use the appropriate tool — never say you cannot do something that a tool enables. "
+                    "After completing all tool calls, always reply with a short text summary of what you did."
                 ),
             }
 
