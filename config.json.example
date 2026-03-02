@@ -7,7 +7,7 @@
   },
   "openrouter": {
     "model": "qwen/qwen3-235b-a22b-2507",
-    "api_key": ""
+    "api_key": "YOUR_OPENROUTER_API_KEY_HERE"
   },
   "tools": {
     "read_file": true,

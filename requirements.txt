@@ -1,1 +1,8 @@
+# Python HTTP library (for LLM + TTS API calls)
 requests>=2.31.0
+
+# GTK4 / libadwaita are system packages — install via your package manager:
+#   Arch Linux:  sudo pacman -S python-gobject gtk4 libadwaita
+#   Ubuntu/Debian: sudo apt install python3-gi gir1.2-gtk-4.0 gir1.2-adw-1
+#   Fedora:      sudo dnf install python3-gobject gtk4 libadwaita
+# Do NOT install PyGObject via pip on Arch — use pacman only.
