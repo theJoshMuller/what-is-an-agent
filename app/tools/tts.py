@@ -11,6 +11,8 @@ VOICE_MAP = {
     "pt": "pf_dora",
     "it": "if_sara",
     "hi": "hf_alpha",
+    "ja": "jf_alpha",
+    "zh": "zf_xiaobei",
 }
 
 LANGUAGE_LABELS = {
@@ -20,6 +22,8 @@ LANGUAGE_LABELS = {
     "pt": "Portuguese",
     "it": "Italian",
     "hi": "Hindi",
+    "ja": "Japanese",
+    "zh": "Mandarin Chinese",
 }
 
 SCHEMA = {
@@ -29,7 +33,7 @@ SCHEMA = {
         "description": (
             "Convert text to speech using Kokoro TTS and save the audio to a file. "
             "Supported languages: en (English), fr (French), es (Spanish), "
-            "pt (Portuguese), it (Italian), hi (Hindi)."
+            "pt (Portuguese), it (Italian), hi (Hindi), ja (Japanese), zh (Mandarin Chinese)."
         ),
         "parameters": {
             "type": "object",
@@ -41,7 +45,7 @@ SCHEMA = {
                 "language": {
                     "type": "string",
                     "enum": list(VOICE_MAP.keys()),
-                    "description": "Language code: en, fr, es, pt, it, hi"
+                    "description": "Language code: en, fr, es, pt, it, hi, ja, zh"
                 },
                 "filename": {
                     "type": "string",
