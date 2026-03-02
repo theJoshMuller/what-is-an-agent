@@ -211,7 +211,10 @@ class AgentDemoWindow(Adw.ApplicationWindow):
 
                 # Append completed assistant turn to context
                 if full_text or pending_tool_calls:
-                    assistant_msg = {"role": "assistant", "content": full_text}
+                    assistant_msg = {
+                        "role": "assistant",
+                        "content": full_text if full_text else None,
+                    }
                     if pending_tool_calls:
                         assistant_msg["tool_calls"] = [
                             {
@@ -242,7 +245,6 @@ class AgentDemoWindow(Adw.ApplicationWindow):
                     self.messages.append({
                         "role": "tool",
                         "tool_call_id": tc.id,
-                        "name": tc.name,
                         "content": tool_content,
                     })
 
