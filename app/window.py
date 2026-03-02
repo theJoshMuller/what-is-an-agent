@@ -177,7 +177,15 @@ class AgentDemoWindow(Adw.ApplicationWindow):
 
                 GLib.idle_add(self._sidebar.set_status, "Thinking…")
 
-                for chunk in llm_stream(self.messages, tool_schemas):
+                system = {
+                    "role": "system",
+                    "content": (
+                        "You are a helpful assistant with access to tools. "
+                        "When the user asks you to read files, write files, or generate speech, "
+                        "always use the appropriate tool — never say you cannot do something that a tool enables."
+                    ),
+                }
+                for chunk in llm_stream([system] + self.messages, tool_schemas):
                     if chunk.error:
                         GLib.idle_add(
                             self._chat.append_text,
