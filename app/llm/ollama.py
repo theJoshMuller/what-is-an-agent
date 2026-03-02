@@ -35,7 +35,7 @@ def _parse_chunk(raw: str) -> StreamChunk:
 def stream(messages: list, tools: list) -> Generator[StreamChunk, None, None]:
     host = config.get("ollama.host", "localhost")
     port = config.get("ollama.port", 11434)
-    model = config.get("ollama.model", "ministral-3:14b-instruct-2512-q8_0")
+    model = config.get("ollama.model", "mistral-small3.2:latest")
     url = f"http://{host}:{port}/api/chat"
 
     payload = {
