@@ -1,5 +1,4 @@
 # app/tools/tts.py
-import subprocess
 from pathlib import Path
 import requests
 
@@ -98,10 +97,3 @@ def execute(args: dict) -> dict:
         }
     except Exception as e:
         return {"result": "", "error": str(e)}
-
-
-def play_audio(filepath: str):
-    """Play audio file using aplay (non-blocking)."""
-    subprocess.Popen(["aplay", filepath],
-                     stdout=subprocess.DEVNULL,
-                     stderr=subprocess.DEVNULL)

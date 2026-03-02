@@ -124,6 +124,20 @@ class AgentDemoWindow(Adw.ApplicationWindow):
         self._entry.set_sensitive(sensitive)
         self._send_btn.set_sensitive(sensitive)
 
+    def _create_bubble_sync(self) -> int:
+        """Create an assistant bubble on the main thread, safe to call from any thread."""
+        result: list[int] = []
+        event = threading.Event()
+
+        def _create():
+            result.append(self._chat.start_assistant_message())
+            event.set()
+            return False
+
+        GLib.idle_add(_create)
+        event.wait()
+        return result[0]
+
     # ── Agentic loop ──────────────────────────────────────────────
 
     def _agent_loop(self):
@@ -137,89 +151,97 @@ class AgentDemoWindow(Adw.ApplicationWindow):
           3. If LLM returns tool_calls → execute each tool → append result → loop
           4. If no tool_calls → done
         """
-        from app.llm import ollama, openrouter
+        bubble_id = -1
+        try:
+            from app.llm import ollama, openrouter
 
-        provider = config.get("provider", "ollama")
-        llm_stream = ollama.stream if provider == "ollama" else openrouter.stream
+            provider = config.get("provider", "ollama")
+            llm_stream = ollama.stream if provider == "ollama" else openrouter.stream
 
-        enabled_tools = [
-            name for name in ["read_file", "write_txt_file", "tts_generate_audio"]
-            if config.get(f"tools.{name}", False)
-        ]
-        tool_schemas = tool_registry.get_tool_schemas(enabled_tools)
+            enabled_tools = [
+                name for name in ["read_file", "write_txt_file", "tts_generate_audio"]
+                if config.get(f"tools.{name}", False)
+            ]
+            tool_schemas = tool_registry.get_tool_schemas(enabled_tools)
 
-        while True:
-            # Create a new streaming assistant bubble
-            bubble_id = self._chat.start_assistant_message()
-            full_text = ""
-            pending_tool_calls = []
+            while True:
+                # Create a new streaming assistant bubble (thread-safe)
+                bubble_id = self._create_bubble_sync()
+                full_text = ""
+                pending_tool_calls = []
 
-            GLib.idle_add(self._sidebar.set_status, "Thinking…")
+                GLib.idle_add(self._sidebar.set_status, "Thinking…")
 
-            for chunk in llm_stream(self.messages, tool_schemas):
-                if chunk.error:
-                    GLib.idle_add(
-                        self._chat.append_text,
-                        bubble_id,
-                        f"\n\n⚠ Error: {chunk.error}"
-                    )
-                    GLib.idle_add(self._sidebar.set_status, "Error")
-                    GLib.idle_add(self._set_input_sensitive, True)
-                    return
-                if chunk.text:
-                    full_text += chunk.text
-                    GLib.idle_add(self._chat.append_text, bubble_id, chunk.text)
-                if chunk.tool_calls:
-                    pending_tool_calls.extend(chunk.tool_calls)
-                if chunk.done:
+                for chunk in llm_stream(self.messages, tool_schemas):
+                    if chunk.error:
+                        GLib.idle_add(
+                            self._chat.append_text,
+                            bubble_id,
+                            f"\n\n⚠ Error: {chunk.error}"
+                        )
+                        GLib.idle_add(self._sidebar.set_status, "Error")
+                        GLib.idle_add(self._set_input_sensitive, True)
+                        return
+                    if chunk.text:
+                        full_text += chunk.text
+                        GLib.idle_add(self._chat.append_text, bubble_id, chunk.text)
+                    if chunk.tool_calls:
+                        pending_tool_calls.extend(chunk.tool_calls)
+                    if chunk.done:
+                        break
+
+                # Append completed assistant turn to context
+                if full_text or pending_tool_calls:
+                    assistant_msg = {"role": "assistant", "content": full_text}
+                    if pending_tool_calls:
+                        assistant_msg["tool_calls"] = [
+                            {
+                                "id": tc.id,
+                                "type": "function",
+                                "function": {"name": tc.name, "arguments": tc.arguments},
+                            }
+                            for tc in pending_tool_calls
+                        ]
+                    self.messages.append(assistant_msg)
+
+                # If no tool calls → conversation turn complete
+                if not pending_tool_calls:
                     break
 
-            # Append completed assistant turn to context
-            if full_text or pending_tool_calls:
-                assistant_msg = {"role": "assistant", "content": full_text}
-                if pending_tool_calls:
-                    assistant_msg["tool_calls"] = [
-                        {
-                            "id": tc.id,
-                            "type": "function",
-                            "function": {"name": tc.name, "arguments": tc.arguments},
-                        }
-                        for tc in pending_tool_calls
-                    ]
-                self.messages.append(assistant_msg)
+                # Execute each tool call
+                for tc in pending_tool_calls:
+                    GLib.idle_add(self._chat.add_tool_indicator, tc.name)
+                    GLib.idle_add(self._sidebar.set_status, f"Running: {tc.name}")
 
-            # If no tool calls → conversation turn complete
-            if not pending_tool_calls:
-                break
+                    result = tool_registry.dispatch(tc.name, tc.arguments)
 
-            # Execute each tool call
-            for tc in pending_tool_calls:
-                GLib.idle_add(self._chat.add_tool_indicator, tc.name)
-                GLib.idle_add(self._sidebar.set_status, f"Running: {tc.name}")
+                    # Append tool result to context
+                    tool_content = (
+                        result["result"] if not result.get("error")
+                        else f"Error: {result['error']}"
+                    )
+                    self.messages.append({
+                        "role": "tool",
+                        "tool_call_id": tc.id,
+                        "name": tc.name,
+                        "content": tool_content,
+                    })
 
-                result = tool_registry.dispatch(tc.name, tc.arguments)
+                    # Show result card + optional play button in UI
+                    audio_file = result.get("audio_file")
+                    GLib.idle_add(
+                        self._chat.add_tool_result,
+                        tc.name,
+                        result,
+                        audio_file,
+                    )
 
-                # Append tool result to context
-                tool_content = (
-                    result["result"] if not result.get("error")
-                    else f"Error: {result['error']}"
-                )
-                self.messages.append({
-                    "role": "tool",
-                    "tool_call_id": tc.id,
-                    "name": tc.name,
-                    "content": tool_content,
-                })
-
-                # Show result card + optional play button in UI
-                audio_file = result.get("audio_file")
-                GLib.idle_add(
-                    self._chat.add_tool_result,
-                    tc.name,
-                    result,
-                    audio_file,
-                )
-
-        # Done — restore input
-        GLib.idle_add(self._sidebar.set_status, "Ready")
-        GLib.idle_add(self._set_input_sensitive, True)
+            # Done — restore input
+            GLib.idle_add(self._sidebar.set_status, "Ready")
+            GLib.idle_add(self._set_input_sensitive, True)
+        except Exception as e:
+            import traceback
+            err_msg = f"\n\n⚠ Unexpected error: {e}"
+            GLib.idle_add(self._chat.append_text, bubble_id, err_msg)
+            GLib.idle_add(self._sidebar.set_status, "Error")
+            GLib.idle_add(self._set_input_sensitive, True)
