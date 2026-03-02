@@ -4,6 +4,7 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Gtk, Adw, GLib, GObject
 import threading
+import json
 
 from app import config
 from app.chat_panel import ChatPanel
@@ -169,24 +170,27 @@ class AgentDemoWindow(Adw.ApplicationWindow):
             ]
             tool_schemas = tool_registry.get_tool_schemas(enabled_tools)
 
+            system = {
+                "role": "system",
+                "content": (
+                    "You are a helpful assistant with access to tools. "
+                    "When the user asks you to read files, write files, or generate speech, "
+                    "always use the appropriate tool — never say you cannot do something that a tool enables."
+                ),
+            }
+
             while True:
-                # Create a new streaming assistant bubble (thread-safe)
-                bubble_id = self._create_bubble_sync()
+                # Bubble is created lazily — only when the LLM actually streams text
+                bubble_id = -1
                 full_text = ""
                 pending_tool_calls = []
 
                 GLib.idle_add(self._sidebar.set_status, "Thinking…")
 
-                system = {
-                    "role": "system",
-                    "content": (
-                        "You are a helpful assistant with access to tools. "
-                        "When the user asks you to read files, write files, or generate speech, "
-                        "always use the appropriate tool — never say you cannot do something that a tool enables."
-                    ),
-                }
                 for chunk in llm_stream([system] + self.messages, tool_schemas):
                     if chunk.error:
+                        if bubble_id == -1:
+                            bubble_id = self._create_bubble_sync()
                         GLib.idle_add(
                             self._chat.append_text,
                             bubble_id,
@@ -196,6 +200,8 @@ class AgentDemoWindow(Adw.ApplicationWindow):
                         GLib.idle_add(self._set_input_sensitive, True)
                         return
                     if chunk.text:
+                        if bubble_id == -1:
+                            bubble_id = self._create_bubble_sync()
                         full_text += chunk.text
                         GLib.idle_add(self._chat.append_text, bubble_id, chunk.text)
                     if chunk.tool_calls:
@@ -211,7 +217,7 @@ class AgentDemoWindow(Adw.ApplicationWindow):
                             {
                                 "id": tc.id,
                                 "type": "function",
-                                "function": {"name": tc.name, "arguments": tc.arguments},
+                                "function": {"name": tc.name, "arguments": json.dumps(tc.arguments)},
                             }
                             for tc in pending_tool_calls
                         ]

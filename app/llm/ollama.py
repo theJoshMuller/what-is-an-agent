@@ -21,13 +21,14 @@ def _parse_chunk(raw: str) -> StreamChunk:
     for tc in raw_tool_calls:
         fn = tc.get("function", {})
         name = fn.get("name", "")
+        tc_id = tc.get("id") or name
         args = fn.get("arguments", {})
         if isinstance(args, str):
             try:
                 args = json.loads(args)
             except Exception:
                 args = {}
-        tool_calls.append(ToolCall(id=name, name=name, arguments=args))
+        tool_calls.append(ToolCall(id=tc_id, name=name, arguments=args))
 
     return StreamChunk(text=content, tool_calls=tool_calls, done=done)
 
