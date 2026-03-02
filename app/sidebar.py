@@ -172,8 +172,8 @@ class Sidebar(Gtk.Box):
             if provider == "ollama"
             else config.get("openrouter.model", "qwen/qwen3-235b-a22b-2507")
         )
-        # Truncate for display
-        display = model if len(model) <= 26 else f"…{model[-24:]}"
+        # Show only the part before ":" (e.g. "ministral-3" not "ministral-3:14b-instruct-...")
+        display = model.split(":")[0]
         self._model_row.set_subtitle(display)
 
     # ── Public API ─────────────────────────────────────────────────

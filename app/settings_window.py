@@ -9,8 +9,8 @@ from app import config
 
 
 class SettingsWindow(Adw.PreferencesDialog):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self):
+        super().__init__()
         self.set_title("Settings")
         self._build()
 

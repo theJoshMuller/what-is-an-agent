@@ -2,6 +2,8 @@
 from pathlib import Path
 import requests
 
+FILES_DIR = Path("files")
+
 VOICE_MAP = {
     "en": "af_heart",
     "fr": "ff_siwis",
@@ -43,7 +45,7 @@ SCHEMA = {
                 },
                 "filename": {
                     "type": "string",
-                    "description": "Output filename (e.g. greeting.wav)"
+                    "description": "Output filename inside ./files/ (e.g. greeting.wav)"
                 }
             },
             "required": ["text", "language", "filename"]
@@ -55,9 +57,10 @@ SCHEMA = {
 def execute(args: dict) -> dict:
     from app import config
 
+    FILES_DIR.mkdir(exist_ok=True)
     text = args.get("text", "")
     language = args.get("language", "en")
-    filename = args.get("filename", "output.wav")
+    filename = Path(args.get("filename", "output.wav")).name  # strip any path prefix
 
     if language not in VOICE_MAP:
         return {
@@ -81,12 +84,12 @@ def execute(args: dict) -> dict:
         if response.status_code != 200:
             return {"result": "", "error": f"TTS API error {response.status_code}: {response.text[:200]}"}
 
-        path = Path(filename)
+        path = FILES_DIR / filename
         with open(path, "wb") as f:
             f.write(response.content)
 
         return {
-            "result": f"Audio saved to {filename} ({len(response.content)} bytes). Voice: {voice}.",
+            "result": f"Audio saved to files/{filename} ({len(response.content)} bytes). Voice: {voice}.",
             "error": None,
             "audio_file": str(path.absolute()),
         }

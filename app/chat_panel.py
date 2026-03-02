@@ -1,10 +1,39 @@
 # app/chat_panel.py
+import re
 import subprocess
 from pathlib import Path
 import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Gtk, Adw, Pango, GLib
+
+
+def markdown_to_pango(text: str) -> str:
+    """Convert a small subset of Markdown to Pango markup for GTK labels."""
+    # 1. Escape Pango special characters in the raw text first
+    text = text.replace("&", "&amp;")
+    text = text.replace("<", "&lt;")
+    text = text.replace(">", "&gt;")
+
+    # 2. Code blocks (``` ... ```) — monospace, before inline code
+    text = re.sub(r"```[^\n]*\n?(.*?)```", lambda m: f'<tt>{m.group(1)}</tt>',
+                  text, flags=re.DOTALL)
+
+    # 3. Inline code: `code`
+    text = re.sub(r"`([^`]+)`", r"<tt>\1</tt>", text)
+
+    # 4. Bold: **text** or __text__
+    text = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", text, flags=re.DOTALL)
+    text = re.sub(r"__(.+?)__", r"<b>\1</b>", text, flags=re.DOTALL)
+
+    # 5. Italic: *text* or _text_ (single, not double)
+    text = re.sub(r"\*([^*\n]+)\*", r"<i>\1</i>", text)
+    text = re.sub(r"_([^_\n]+)_", r"<i>\1</i>", text)
+
+    # 6. Headers: ### ## # — bold (on their own line)
+    text = re.sub(r"^#{1,3} (.+)$", r"<b>\1</b>", text, flags=re.MULTILINE)
+
+    return text
 
 
 class MessageBubble(Gtk.Box):
@@ -18,6 +47,7 @@ class MessageBubble(Gtk.Box):
         self.set_margin_bottom(4)
 
         is_user = role == "user"
+        self._raw_text = text  # Accumulates plain text; markup re-rendered on each update
 
         # Text label
         self._label = Gtk.Label()
@@ -25,8 +55,9 @@ class MessageBubble(Gtk.Box):
         self._label.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
         self._label.set_xalign(0)
         self._label.set_selectable(True)
+        self._label.set_use_markup(True)
         if text:
-            self._label.set_text(text)
+            self._render()
 
         self._label.set_margin_start(12)
         self._label.set_margin_end(12)
@@ -49,9 +80,17 @@ class MessageBubble(Gtk.Box):
 
         self.append(bubble)
 
+    def _render(self):
+        """Re-render _raw_text as Pango markup. Falls back to plain text on error."""
+        markup = markdown_to_pango(self._raw_text)
+        try:
+            self._label.set_markup(markup)
+        except Exception:
+            self._label.set_text(self._raw_text)
+
     def append_text(self, text: str):
-        current = self._label.get_text()
-        self._label.set_text(current + text)
+        self._raw_text += text
+        self._render()
 
 
 class ToolChip(Gtk.Box):

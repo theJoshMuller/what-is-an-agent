@@ -1,6 +1,12 @@
 # app/tools/read_file.py
 from pathlib import Path
 
+FILES_DIR = Path("files")
+
+
+def _ensure_dir():
+    FILES_DIR.mkdir(exist_ok=True)
+
 
 def get_schema() -> dict:
     from app import config
@@ -9,13 +15,21 @@ def get_schema() -> dict:
         "type": "function",
         "function": {
             "name": "read_file",
-            "description": f"Read a file from the current working directory and return its contents. Default file: {default}",
+            "description": (
+                f"Read a file from the ./files/ directory and return its contents. "
+                f"Default file: {default}. "
+                f"If the user says 'read the file', 'read the note', or does not specify a filename, "
+                f"call this tool with no arguments to read the default file ({default})."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "filename": {
                         "type": "string",
-                        "description": f"The filename to read (default: {default})"
+                        "description": (
+                            f"Filename inside ./files/ to read. "
+                            f"Omit to use the default ({default})."
+                        )
                     }
                 },
                 "required": []
@@ -23,33 +37,17 @@ def get_schema() -> dict:
         }
     }
 
-# Also expose as SCHEMA for backwards compat
-SCHEMA = {
-    "type": "function",
-    "function": {
-        "name": "read_file",
-        "description": "Read a file from the current working directory and return its contents.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "filename": {
-                    "type": "string",
-                    "description": "The filename to read"
-                }
-            },
-            "required": []
-        }
-    }
-}
-
 
 def execute(args: dict) -> dict:
     from app import config
+    _ensure_dir()
     default = config.get("tools.default_read_filename", "note.txt")
     filename = args.get("filename", default)
-    path = Path(filename)
+    # Strip any path separators — files always live in ./files/
+    filename = Path(filename).name
+    path = FILES_DIR / filename
     if not path.exists():
-        return {"result": "", "error": f"File not found: {filename}"}
+        return {"result": "", "error": f"File not found: files/{filename}"}
     try:
         content = path.read_text(encoding="utf-8")
         return {"result": content, "error": None}

@@ -6,17 +6,19 @@ from unittest.mock import patch, MagicMock
 
 
 class TestReadFile:
-    def test_reads_existing_file(self, tmp_path):
-        f = tmp_path / "note.txt"
-        f.write_text("Hello world")
+    def test_reads_existing_file(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "files").mkdir()
+        (tmp_path / "files" / "note.txt").write_text("Hello world")
         from app.tools.read_file import execute
-        result = execute({"filename": str(f)})
+        result = execute({"filename": "note.txt"})
         assert result["error"] is None
         assert result["result"] == "Hello world"
 
-    def test_missing_file_returns_error(self, tmp_path):
+    def test_missing_file_returns_error(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
         from app.tools.read_file import execute
-        result = execute({"filename": str(tmp_path / "missing.txt")})
+        result = execute({"filename": "missing.txt"})
         assert result["error"] is not None
         assert "not found" in result["error"].lower()
 
@@ -27,7 +29,7 @@ class TestWriteTxtFile:
         from app.tools.write_txt_file import execute
         result = execute({"filename": "output.txt", "content": "Test content"})
         assert result["error"] is None
-        assert (tmp_path / "output.txt").read_text() == "Test content"
+        assert (tmp_path / "files" / "output.txt").read_text() == "Test content"
 
     def test_returns_confirmation(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
@@ -89,11 +91,12 @@ class TestToolRegistry:
         assert "write_txt_file" in names
         assert "tts_generate_audio" not in names
 
-    def test_dispatch_read_file(self, tmp_path):
-        f = tmp_path / "note.txt"
-        f.write_text("demo")
+    def test_dispatch_read_file(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "files").mkdir()
+        (tmp_path / "files" / "note.txt").write_text("demo")
         from app.tools import dispatch
-        result = dispatch("read_file", {"filename": str(f)})
+        result = dispatch("read_file", {"filename": "note.txt"})
         assert result["result"] == "demo"
 
     def test_dispatch_unknown_tool(self):

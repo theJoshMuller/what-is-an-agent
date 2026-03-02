@@ -30,22 +30,27 @@ class AgentDemoWindow(Adw.ApplicationWindow):
         header = Adw.HeaderBar()
         toolbar_view.add_top_bar(header)
 
-        # Sidebar toggle button (used in narrow mode)
-        self._sidebar_toggle = Gtk.ToggleButton(icon_name="sidebar-show-symbolic")
-        self._sidebar_toggle.set_tooltip_text("Show/Hide Tools")
-        header.pack_start(self._sidebar_toggle)
+        # Settings button (left side)
+        settings_btn = Gtk.Button()
+        settings_content = Adw.ButtonContent(icon_name="preferences-system-symbolic", label="Settings")
+        settings_btn.set_child(settings_content)
+        settings_btn.connect("clicked", self._on_settings)
+        header.pack_start(settings_btn)
 
         # Clear context button
-        clear_btn = Gtk.Button(icon_name="edit-clear-all-symbolic")
+        clear_btn = Gtk.Button()
+        clear_content = Adw.ButtonContent(icon_name="edit-clear-all-symbolic", label="Clear")
+        clear_btn.set_child(clear_content)
         clear_btn.set_tooltip_text("Clear conversation")
         clear_btn.connect("clicked", self._on_clear)
         header.pack_end(clear_btn)
 
-        # Settings button
-        settings_btn = Gtk.Button(icon_name="preferences-system-symbolic")
-        settings_btn.set_tooltip_text("Settings")
-        settings_btn.connect("clicked", self._on_settings)
-        header.pack_end(settings_btn)
+        # Sidebar toggle — right side, right-panel icon
+        self._sidebar_toggle = Gtk.ToggleButton()
+        toggle_content = Adw.ButtonContent(icon_name="view-right-pane-symbolic", label="Tools")
+        self._sidebar_toggle.set_child(toggle_content)
+        self._sidebar_toggle.set_tooltip_text("Show/Hide Tools")
+        header.pack_end(self._sidebar_toggle)
 
         # Responsive split view: sidebar on right, chat on left
         self._split_view = Adw.OverlaySplitView()
@@ -98,8 +103,8 @@ class AgentDemoWindow(Adw.ApplicationWindow):
         self._chat.clear()
 
     def _on_settings(self, *_):
-        win = SettingsWindow(transient_for=self)
-        win.present()
+        win = SettingsWindow()
+        win.present(self)
 
     def _on_tool_toggled(self, tool_name: str, enabled: bool):
         """Toggling any tool clears context (tool schemas change)."""
