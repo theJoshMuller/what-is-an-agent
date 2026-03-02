@@ -4,7 +4,6 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Gtk, Adw, GLib, GObject
 import threading
-import json
 
 from app import config
 from app.chat_panel import ChatPanel
@@ -220,7 +219,7 @@ class AgentDemoWindow(Adw.ApplicationWindow):
                             {
                                 "id": tc.id,
                                 "type": "function",
-                                "function": {"name": tc.name, "arguments": json.dumps(tc.arguments)},
+                                "function": {"name": tc.name, "arguments": tc.arguments},
                             }
                             for tc in pending_tool_calls
                         ]
