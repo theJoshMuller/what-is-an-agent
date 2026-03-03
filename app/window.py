@@ -251,7 +251,12 @@ class AgentDemoWindow(Adw.ApplicationWindow):
                 if not pending_tool_calls:
                     break
 
-                # Execute each tool call
+                # Execute each tool call (skip any that are no longer enabled)
+                pending_tool_calls = [tc for tc in pending_tool_calls if tc.name in enabled_tools]
+
+                if not pending_tool_calls:
+                    break
+
                 for tc in pending_tool_calls:
                     GLib.idle_add(self._chat.add_tool_indicator, tc.name)
                     GLib.idle_add(self._sidebar.set_status, f"Running: {tc.name}")

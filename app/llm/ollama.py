@@ -44,7 +44,8 @@ def stream(messages: list, tools: list) -> Generator[StreamChunk, None, None]:
         "model": model,
         "messages": messages,
         "stream": True,
-        "think": False,  # Disable thinking when tools active — thinking leaks into tool call parsing and causes 500s
+        # Thinking leaks into tool call parsing and causes 500s — disable it only when tools are active
+        "think": not bool(tools),
     }
     if tools:
         payload["tools"] = tools
